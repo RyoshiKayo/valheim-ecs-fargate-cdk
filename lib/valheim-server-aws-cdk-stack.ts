@@ -142,6 +142,8 @@ export class ValheimServerAwsCdkStack extends Stack {
       desiredCount: 1,
       assignPublicIp: true,
       platformVersion: FargatePlatformVersion.VERSION1_4,
+      minHealthyPercent: 0,
+      enableExecuteCommand: true,
     });
 
     serverFileSystem.connections.allowDefaultPortFrom(valheimService);
