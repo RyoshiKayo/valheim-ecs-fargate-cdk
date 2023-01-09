@@ -20,7 +20,7 @@ interface ValheimServerAwsCdkStackProps extends StackProps {
   worldResourcesBucket?: Bucket;
 }
 
-const ACTUAL_VALHEIM_WORLD_LOCATION = "/home/valheim/.config/unity3d/IronGate/Valheim/worlds_local/";
+const ACTUAL_VALHEIM_WORLD_LOCATION = "/config/";
 
 export class ValheimServerAwsCdkStack extends Stack {
   constructor(scope: Construct, id: string, props?: ValheimServerAwsCdkStackProps) {
@@ -96,7 +96,12 @@ export class ValheimServerAwsCdkStack extends Stack {
 
     if (props && props.worldResourcesBucket) {
       environment["PRE_SUPERVISOR_HOOK"] = "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install awscli";
-      environment["PRE_START_HOOK"] = `aws s3 sync s3://${props.worldResourcesBucket.bucketName}/* ${ACTUAL_VALHEIM_WORLD_LOCATION}`;
+
+      // TODO: Make this smarter. Eg, check BOOTSTRAP_WITH_WORLD_NAME and see if *that* world file already exsts. Or give an option to not overwrite with the data from S3. 
+      environment["PRE_START_HOOK"] = 
+        `if [[ ! -d /config/worlds_local/ ]]; then aws s3 cp --recursive s3://${props.worldResourcesBucket.bucketName}/ ${ACTUAL_VALHEIM_WORLD_LOCATION}; else echo "Skipping copy from S3 because /config/worlds_local/ already exists"; fi`;
+
+      Annotations.of(this).addInfo("World bootstrapping is configured, if the EFS file system already has a /config/worlds_local/ folder, then we will NOT bootstrap. This is to prevent overrwriting with the original bootstrap if the container restarts.");
     }
 
     const container = valheimTaskDefinition.addContainer("valheimContainer", {
@@ -137,7 +142,6 @@ export class ValheimServerAwsCdkStack extends Stack {
       desiredCount: 1,
       assignPublicIp: true,
       platformVersion: FargatePlatformVersion.VERSION1_4,
-      minHealthyPercent: 0
     });
 
     serverFileSystem.connections.allowDefaultPortFrom(valheimService);
