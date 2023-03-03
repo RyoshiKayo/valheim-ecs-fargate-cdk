@@ -1,5 +1,5 @@
 import { Annotations, CfnOutput, Stack, StackProps } from "aws-cdk-lib";
-import { Port, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
+import { IpAddresses, Port, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
 import { Cluster, Compatibility, ContainerImage, FargatePlatformVersion, FargateService, LogDrivers, MountPoint, NetworkMode, Protocol, Secret, TaskDefinition, Volume } from "aws-cdk-lib/aws-ecs";
 import { FileSystem } from "aws-cdk-lib/aws-efs";
 import { Bucket } from "aws-cdk-lib/aws-s3";
@@ -42,7 +42,7 @@ export class ValheimServerAwsCdkStack extends Stack {
     );
 
     const vpc = new Vpc(this, "valheimVpc", {
-      cidr: "10.0.0.0/24",
+      ipAddresses: IpAddresses.cidr("10.0.0.0/24"),
       subnetConfiguration: [
         {
           cidrMask: 24,
